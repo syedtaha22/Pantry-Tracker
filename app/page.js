@@ -7,6 +7,7 @@ import { AddShoppingCart, Edit, Delete } from '@mui/icons-material';
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { v4 as uuidv4 } from 'uuid';
+import { Analytics } from "@vercel/analytics/react"; // Import Analytics
 
 // Define custom theme
 const theme = createTheme({
@@ -273,6 +274,8 @@ const Page = () => {
       <Footer>
         <Typography variant="body2">© 2024 Pantry Pal</Typography>
       </Footer>
+
+      <Analytics /> {/* Add the Analytics component here */}
     </ThemeProvider>
   );
 };
