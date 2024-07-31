@@ -1,25 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  Button,
-  Card,
-  CardHeader,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  TextField,
-  createTheme,
-  ThemeProvider,
-} from '@mui/material';
+import { Container, Typography, Box, Button, Card, CardHeader, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, TextField, createTheme, ThemeProvider, Drawer, List, ListItem, ListItemText, Divider } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { AddShoppingCart, Edit, Delete } from '@mui/icons-material';
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore';
@@ -115,37 +97,45 @@ const Footer = styled(Box)(({ theme }) => ({
 }));
 
 const Page = () => {
-  // Generate or retrieve session ID
-  const sessionId = sessionStorage.getItem('sessionId') || uuidv4();
-  if (!sessionStorage.getItem('sessionId')) {
-    sessionStorage.setItem('sessionId', sessionId);
-  }
-
-  // Firestore collection reference with session ID
-  const collectionRef = collection(firestore, `pantry-items-${sessionId}`);
-
   const [pantryItems, setPantryItems] = useState([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
   const [newItemExpiration, setNewItemExpiration] = useState('');
   const [editingItem, setEditingItem] = useState(null);
 
+  const [sessionId, setSessionId] = useState('');
+
+  useEffect(() => {
+    // Only run this code on the client side
+    const session = sessionStorage.getItem('sessionId');
+    if (!session) {
+      const newSessionId = uuidv4();
+      sessionStorage.setItem('sessionId', newSessionId);
+      setSessionId(newSessionId);
+    } else {
+      setSessionId(session);
+    }
+  }, []);
+
   const updatePantry = async () => {
-    const snapshot = await getDocs(collectionRef);
-    const pantryList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const snapshot = collection(firestore, `pantry-items-${sessionId}`);
+    const docs = await getDocs(snapshot);
+    const pantryList = [];
+    docs.forEach((doc) => {
+      pantryList.push({ id: doc.id, ...doc.data() });
+    });
     setPantryItems(pantryList);
   };
 
   useEffect(() => {
-    updatePantry();
-    // Clear session ID on component unmount (page unload)
-    return () => {
-      sessionStorage.removeItem('sessionId');
-    };
-  }, []);
+    if (sessionId) {
+      updatePantry();
+    }
+  }, [sessionId]);
 
   const addItem = async (name, quantity, expiration) => {
-    const docRef = doc(collectionRef, name);
+    const docRef = doc(firestore, `pantry-items-${sessionId}`, name);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const { quantity: existingQuantity } = docSnap.data();
@@ -160,7 +150,7 @@ const Page = () => {
   };
 
   const deleteItem = async (id) => {
-    await deleteDoc(doc(collectionRef, id));
+    await deleteDoc(doc(firestore, `pantry-items-${sessionId}`, id));
     await updatePantry();
   };
 
@@ -172,7 +162,7 @@ const Page = () => {
   };
 
   const editItem = async (id, name, quantity, expiration) => {
-    const docRef = doc(collectionRef, id);
+    const docRef = doc(firestore, `pantry-items-${sessionId}`, id);
     await setDoc(docRef, { name, quantity: Number(quantity) || 1, expiration }, { merge: true });
     await updatePantry();
     setEditingItem(null);
@@ -193,7 +183,7 @@ const Page = () => {
       </Header>
 
       <Container maxWidth="lg" sx={{ marginTop: 4, paddingBottom: 8 }}>
-        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={4}>
+        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={4} height='70vh'>
           <Card sx={{ flex: 1 }}>
             <CardHeader title={editingItem ? "Edit Pantry Item" : "Add Pantry Item"} />
             <CardContent>
@@ -252,7 +242,7 @@ const Page = () => {
                     <TableRow>
                       <TableCell>Name</TableCell>
                       <TableCell>Quantity</TableCell>
-                      <TableCell>Expiration Date</TableCell>
+                      <TableCell>Expiration</TableCell>
                       <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHead>
@@ -261,13 +251,13 @@ const Page = () => {
                       <TableRow key={item.id}>
                         <TableCell>{item.name}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{item.expiration || 'No expiry date'}</TableCell>
+                        <TableCell>{item.expiration}</TableCell>
                         <TableCell>
                           <IconButton onClick={() => startEditing(item)}>
-                            <Edit />
+                            <Edit color="primary" />
                           </IconButton>
                           <IconButton onClick={() => deleteItem(item.id)}>
-                            <Delete />
+                            <Delete color="error" />
                           </IconButton>
                         </TableCell>
                       </TableRow>
@@ -281,7 +271,7 @@ const Page = () => {
       </Container>
 
       <Footer>
-        <Typography variant="body2">© 2024 Pantry Pal. All rights reserved.</Typography>
+        <Typography variant="body2">© 2024 Pantry Pal</Typography>
       </Footer>
     </ThemeProvider>
   );
