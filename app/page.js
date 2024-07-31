@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -27,6 +27,8 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { AddShoppingCart, Logout, Edit, Delete, Menu as MenuIcon } from '@mui/icons-material';
+import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore';
+import { firestore } from '@/firebase';
 
 // Define custom theme
 const theme = createTheme({
@@ -96,7 +98,6 @@ const HeaderContent = styled(Container)(({ theme }) => ({
     flexDirection: 'row',
     alignItems: 'center',
   },
- 
 }));
 
 const HeaderText = styled(Typography)(({ theme }) => ({
@@ -133,16 +134,66 @@ const SignOutLink = styled(Typography)(({ theme }) => ({
 }));
 
 const Page = () => {
-  const [pantryItems, setPantryItems] = useState([
-    { name: 'Apples', quantity: 10, expiration: '2023-06-30' },
-    { name: 'Eggs', quantity: 12, expiration: '2023-07-15' },
-    { name: 'Flour', quantity: '5 lbs', expiration: '2024-01-01' },
-  ]);
-
+  const [pantryItems, setPantryItems] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('');
+  const [newItemExpiration, setNewItemExpiration] = useState('');
+  const [editingItem, setEditingItem] = useState(null);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
+  };
+
+  const updatePantry = async () => {
+    const snapshot = collection(firestore, 'pantry-items');
+    const docs = await getDocs(snapshot);
+    const pantryList = [];
+    docs.forEach((doc) => {
+      pantryList.push({ id: doc.id, ...doc.data() });
+    });
+    setPantryItems(pantryList);
+  };
+
+  useEffect(() => {
+    updatePantry();
+  }, []);
+
+  const addItem = async (name, quantity, expiration) => {
+    const docRef = doc(firestore, 'pantry-items', name);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const { quantity: existingQuantity } = docSnap.data();
+      await setDoc(docRef, { quantity: existingQuantity + Number(quantity), expiration }, { merge: true });
+    } else {
+      await setDoc(docRef, { name, quantity: Number(quantity) || 1, expiration });
+    }
+    await updatePantry();
+    setNewItemName('');
+    setNewItemQuantity('');
+    setNewItemExpiration('');
+  };
+
+  const deleteItem = async (id) => {
+    await deleteDoc(doc(firestore, 'pantry-items', id));
+    await updatePantry();
+  };
+
+  const startEditing = (item) => {
+    setEditingItem(item);
+    setNewItemName(item.name);
+    setNewItemQuantity(item.quantity);
+    setNewItemExpiration(item.expiration);
+  };
+
+  const editItem = async (id, name, quantity, expiration) => {
+    const docRef = doc(firestore, 'pantry-items', id);
+    await setDoc(docRef, { name, quantity: Number(quantity) || 1, expiration }, { merge: true });
+    await updatePantry();
+    setEditingItem(null);
+    setNewItemName('');
+    setNewItemQuantity('');
+    setNewItemExpiration('');
   };
 
   return (
@@ -187,24 +238,52 @@ const Page = () => {
       </Drawer>
 
       <Container maxWidth="lg" sx={{ marginTop: 4, paddingBottom: 8 }}>
-        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={4}>
+        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={4} height = '70vh'>
           <Card sx={{ flex: 1 }}>
-            <CardHeader title="Add Pantry Item" />
+            <CardHeader title={editingItem ? "Edit Pantry Item" : "Add Pantry Item"} />
             <CardContent>
               <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Box>
                   <Typography variant="body1">Name</Typography>
-                  <TextField placeholder="Enter item name" fullWidth />
+                  <TextField
+                    placeholder="Enter item name"
+                    fullWidth
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                  />
                 </Box>
                 <Box>
                   <Typography variant="body1">Quantity</Typography>
-                  <TextField type="number" placeholder="Enter quantity" fullWidth />
+                  <TextField
+                    type="number"
+                    placeholder="Enter quantity"
+                    fullWidth
+                    value={newItemQuantity}
+                    onChange={(e) => setNewItemQuantity(e.target.value)}
+                  />
                 </Box>
                 <Box>
                   <Typography variant="body1">Expiration Date</Typography>
-                  <TextField type="date" fullWidth />
+                  <TextField
+                    type="date"
+                    fullWidth
+                    value={newItemExpiration}
+                    onChange={(e) => setNewItemExpiration(e.target.value)}
+                  />
                 </Box>
-                <Button variant="contained" sx={{ alignSelf: 'flex-end' }}>Add Item</Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => {
+                    if (editingItem) {
+                      editItem(editingItem.id, newItemName, newItemQuantity, newItemExpiration);
+                    } else {
+                      addItem(newItemName, newItemQuantity, newItemExpiration);
+                    }
+                  }}
+                >
+                  {editingItem ? 'Save Changes' : 'Add Item'}
+                </Button>
               </Box>
             </CardContent>
           </Card>
@@ -212,28 +291,28 @@ const Page = () => {
           <Card sx={{ flex: 2 }}>
             <CardHeader title="Pantry Items" />
             <CardContent>
-              <TableContainer sx={{ maxHeight: '400px', overflowY: 'auto' }}>
-                <Table>
+              <TableContainer sx={{ maxHeight: 350, overflowY: 'auto' }}>
+                <Table stickyHeader>
                   <TableHead>
                     <TableRow>
                       <TableCell>Name</TableCell>
                       <TableCell>Quantity</TableCell>
-                      <TableCell>Expiration</TableCell>
+                      <TableCell>Expiration Date</TableCell>
                       <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {pantryItems.map((item, index) => (
-                      <TableRow key={index}>
+                    {pantryItems.map((item) => (
+                      <TableRow key={item.id}>
                         <TableCell>{item.name}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{item.expiration}</TableCell>
+                        <TableCell>{item.expiration || 'No expiry date'}</TableCell>
                         <TableCell>
-                          <IconButton size="small">
-                            <Edit fontSize="small" />
+                          <IconButton onClick={() => startEditing(item)}>
+                            <Edit />
                           </IconButton>
-                          <IconButton size="small" color="error">
-                            <Delete fontSize="small" />
+                          <IconButton onClick={() => deleteItem(item.id)}>
+                            <Delete />
                           </IconButton>
                         </TableCell>
                       </TableRow>
@@ -247,7 +326,7 @@ const Page = () => {
       </Container>
 
       <Footer>
-        <Typography variant="body2">&copy; 2024 Pantry Tracker</Typography>
+        <Typography variant="body2">© 2024 Pantry Tracker. All rights reserved.</Typography>
       </Footer>
     </ThemeProvider>
   );
