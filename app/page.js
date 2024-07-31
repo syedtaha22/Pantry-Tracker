@@ -23,8 +23,7 @@ import {
 import { styled } from '@mui/material/styles';
 import { AddShoppingCart, Edit, Delete } from '@mui/icons-material';
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore';
-import { firestore, analytics } from '@/firebase'; // Adjust the import based on your file structure
-import { logEvent } from 'firebase/analytics';
+import { firestore } from '@/firebase';
 import { v4 as uuidv4 } from 'uuid';
 
 // Define custom theme
@@ -135,10 +134,6 @@ const Page = () => {
     const snapshot = await getDocs(collectionRef);
     const pantryList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setPantryItems(pantryList);
-    // Log event
-    if (analytics) {
-      logEvent(analytics, 'update_pantry');
-    }
   };
 
   useEffect(() => {
@@ -162,19 +157,11 @@ const Page = () => {
     setNewItemName('');
     setNewItemQuantity('');
     setNewItemExpiration('');
-    // Log event
-    if (analytics) {
-      logEvent(analytics, 'add_item', { itemName: name });
-    }
   };
 
   const deleteItem = async (id) => {
     await deleteDoc(doc(collectionRef, id));
     await updatePantry();
-    // Log event
-    if (analytics) {
-      logEvent(analytics, 'delete_item', { itemId: id });
-    }
   };
 
   const startEditing = (item) => {
@@ -192,10 +179,6 @@ const Page = () => {
     setNewItemName('');
     setNewItemQuantity('');
     setNewItemExpiration('');
-    // Log event
-    if (analytics) {
-      logEvent(analytics, 'edit_item', { itemId: id, itemName: name });
-    }
   };
 
   return (
