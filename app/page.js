@@ -26,7 +26,7 @@ import {
   Divider,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { AddShoppingCart, Logout, Edit, Delete, Menu as MenuIcon } from '@mui/icons-material';
+import { AddShoppingCart, Edit, Delete, Menu as MenuIcon } from '@mui/icons-material';
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 
@@ -118,20 +118,6 @@ const Footer = styled(Box)(({ theme }) => ({
   width: '100%',
 }));
 
-const DrawerListItem = styled(ListItem)(({ theme }) => ({
-  '&:not(:last-child)': {
-    borderBottom: `1px solid ${theme.palette.secondary.main}`,
-  },
-}));
-
-const SignOutLink = styled(Typography)(({ theme }) => ({
-  padding: theme.spacing(1, 2),
-  color: theme.palette.primary.contrastText,
-  textAlign: 'center',
-  '&:hover': {
-    textDecoration: 'underline',
-  },
-}));
 
 const Page = () => {
   const [pantryItems, setPantryItems] = useState([]);
@@ -140,10 +126,6 @@ const Page = () => {
   const [newItemQuantity, setNewItemQuantity] = useState('');
   const [newItemExpiration, setNewItemExpiration] = useState('');
   const [editingItem, setEditingItem] = useState(null);
-
-  const handleDrawerToggle = () => {
-    setDrawerOpen(!drawerOpen);
-  };
 
   const updatePantry = async () => {
     const snapshot = collection(firestore, 'pantry-items');
@@ -202,40 +184,10 @@ const Page = () => {
         <HeaderContent maxWidth="2000">
           <a href="/" style={{ display: 'flex', alignItems: 'center', color: 'inherit', textDecoration: 'none' }}>
             <AddShoppingCart fontSize="medium" />
-            <HeaderText variant="h6" component="span">Pantry Tracker</HeaderText>
+            <HeaderText variant="h6" component="span">Pantry Pal</HeaderText>
           </a>
-          <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 2, marginLeft: 'auto' }}>
-            <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>Pantry</a>
-            <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>Profile</a>
-            <SignOutLink component="a" href="/" variant="body1">Sign Out</SignOutLink>
-          </Box>
-          <IconButton
-            sx={{ display: { xs: 'flex', sm: 'none' }, color: theme.palette.primary.contrastText }}
-            onClick={handleDrawerToggle}
-          >
-            <MenuIcon />
-          </IconButton>
         </HeaderContent>
       </Header>
-
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={handleDrawerToggle}
-        PaperProps={{ sx: { backgroundColor: '#000000', color: '#ffffff' } }}
-      >
-        <List>
-          <DrawerListItem button component="a" href="/" onClick={handleDrawerToggle}>
-            <ListItemText primary="Pantry" />
-          </DrawerListItem>
-          <DrawerListItem button component="a" href="/" onClick={handleDrawerToggle}>
-            <ListItemText primary="Profile" />
-          </DrawerListItem>
-          <DrawerListItem button onClick={handleDrawerToggle}>
-            <SignOutLink component="a" href="/" variant="body1">Sign Out</SignOutLink>
-          </DrawerListItem>
-        </List>
-      </Drawer>
 
       <Container maxWidth="lg" sx={{ marginTop: 4, paddingBottom: 8 }}>
         <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={4} height = '70vh'>
@@ -326,7 +278,7 @@ const Page = () => {
       </Container>
 
       <Footer>
-        <Typography variant="body2">© 2024 Pantry Tracker. All rights reserved.</Typography>
+        <Typography variant="body2">© 2024 Pantry Pal. All rights reserved.</Typography>
       </Footer>
     </ThemeProvider>
   );
