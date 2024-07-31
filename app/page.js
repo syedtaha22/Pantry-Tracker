@@ -183,7 +183,7 @@ const Page = () => {
       </Header>
 
       <Container maxWidth="lg" sx={{ marginTop: 4, paddingBottom: 8 }}>
-        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={4} height='70vh'>
+        <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={4}>
           <Card sx={{ flex: 1 }}>
             <CardHeader title={editingItem ? "Edit Pantry Item" : "Add Pantry Item"} />
             <CardContent>
