@@ -1,8 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
-
+import { getAuth } from 'firebase/auth';
 
 // Your web app's Firebase configuration from environment variables
 const firebaseConfig = {
@@ -17,7 +16,18 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 const firestore = getFirestore(app);
+const auth = getAuth(app);
 
-export {app, firestore}
+// Conditionally initialize Firebase Analytics only on the client side
+let analytics;
+if (typeof window !== 'undefined') {
+  const { getAnalytics, isSupported } = require('firebase/analytics');
+  isSupported().then(supported => {
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  });
+}
+
+export { app, firestore, auth, analytics };
