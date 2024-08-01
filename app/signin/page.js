@@ -1,4 +1,3 @@
-// app/signin/page.js
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -156,7 +155,7 @@ const SignInPage = () => {
               color="secondary"
               onClick={handleSignUp}
             >
-              Don't have an account? Sign Up
+              Don&apos;t have an account? Sign Up
             </Button>
           </Box>
         </Box>
