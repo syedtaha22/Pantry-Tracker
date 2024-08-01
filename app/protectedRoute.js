@@ -1,11 +1,10 @@
-// app/protectedRoute.js
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const withAuth = (Component) => {
-  return (props) => {
+  const AuthHOC = (props) => {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
 
@@ -27,6 +26,11 @@ const withAuth = (Component) => {
 
     return <Component {...props} />;
   };
+
+  // Add a display name for the higher-order component
+  AuthHOC.displayName = `withAuth(${Component.displayName || Component.name || 'Component'})`;
+
+  return AuthHOC;
 };
 
 export default withAuth;
