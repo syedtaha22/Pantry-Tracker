@@ -125,11 +125,7 @@ const Page = () => {
     return () => unsubscribe(); // Cleanup subscription on unmount
   }, []);
 
-  useEffect(() => {
-    if (userUid) {
-      updatePantry();
-    }
-  }, [userUid]);
+
 
   const updatePantry = async () => {
     if (userUid) {
@@ -142,6 +138,12 @@ const Page = () => {
       setPantryItems(pantryList);
     }
   };
+
+  useEffect(() => {
+    if (userUid) {
+      updatePantry();
+    }
+  }, [userUid]);
 
   const addItem = async (name, quantity, expiration) => {
     if (userUid) {
