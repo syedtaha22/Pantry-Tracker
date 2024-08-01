@@ -7,7 +7,6 @@ import { AddShoppingCart, Edit, Delete, Logout, AccountCircle } from '@mui/icons
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { firestore, auth } from '@/firebase';
-import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/navigation';
 import { Analytics } from "@vercel/analytics/react";
 import withAuth from '../protectedRoute';
@@ -102,74 +101,70 @@ const Footer = styled(Box)(({ theme }) => ({
 
 const Page = () => {
   const [pantryItems, setPantryItems] = useState([]);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
   const [newItemExpiration, setNewItemExpiration] = useState('');
   const [editingItem, setEditingItem] = useState(null);
-  const [sessionId, setSessionId] = useState('');
   const [anchorEl, setAnchorEl] = useState(null); // For dropdown menu
   const [userEmail, setUserEmail] = useState(''); // State to hold user email
+  const [userUid, setUserUid] = useState(''); // State to hold user UID
   const router = useRouter(); // Initialize router
 
   useEffect(() => {
-    const session = sessionStorage.getItem('sessionId');
-    if (!session) {
-      const newSessionId = uuidv4();
-      sessionStorage.setItem('sessionId', newSessionId);
-      setSessionId(newSessionId);
-    } else {
-      setSessionId(session);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Fetch the current user's email
+    // Fetch the current user's email and UID
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserEmail(user.email);
+        setUserUid(user.uid);
       } else {
         setUserEmail('');
+        setUserUid('');
       }
     });
 
     return () => unsubscribe(); // Cleanup subscription on unmount
   }, []);
 
-  const updatePantry = async () => {
-    const snapshot = collection(firestore, `pantry-items-${sessionId}`);
-    const docs = await getDocs(snapshot);
-    const pantryList = [];
-    docs.forEach((doc) => {
-      pantryList.push({ id: doc.id, ...doc.data() });
-    });
-    setPantryItems(pantryList);
-  };
-
   useEffect(() => {
-    if (sessionId) {
+    if (userUid) {
       updatePantry();
     }
-  }, [sessionId]);
+  }, [userUid]);
+
+  const updatePantry = async () => {
+    if (userUid) {
+      const snapshot = collection(firestore, `pantry-items-${userUid}`);
+      const docs = await getDocs(snapshot);
+      const pantryList = [];
+      docs.forEach((doc) => {
+        pantryList.push({ id: doc.id, ...doc.data() });
+      });
+      setPantryItems(pantryList);
+    }
+  };
 
   const addItem = async (name, quantity, expiration) => {
-    const docRef = doc(firestore, `pantry-items-${sessionId}`, name);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      const { quantity: existingQuantity } = docSnap.data();
-      await setDoc(docRef, { quantity: existingQuantity + Number(quantity), expiration }, { merge: true });
-    } else {
-      await setDoc(docRef, { name, quantity: Number(quantity) || 1, expiration });
+    if (userUid) {
+      const docRef = doc(firestore, `pantry-items-${userUid}`, name);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const { quantity: existingQuantity } = docSnap.data();
+        await setDoc(docRef, { quantity: existingQuantity + Number(quantity), expiration }, { merge: true });
+      } else {
+        await setDoc(docRef, { name, quantity: Number(quantity) || 1, expiration });
+      }
+      await updatePantry();
+      setNewItemName('');
+      setNewItemQuantity('');
+      setNewItemExpiration('');
     }
-    await updatePantry();
-    setNewItemName('');
-    setNewItemQuantity('');
-    setNewItemExpiration('');
   };
 
   const deleteItem = async (id) => {
-    await deleteDoc(doc(firestore, `pantry-items-${sessionId}`, id));
-    await updatePantry();
+    if (userUid) {
+      await deleteDoc(doc(firestore, `pantry-items-${userUid}`, id));
+      await updatePantry();
+    }
   };
 
   const startEditing = (item) => {
@@ -180,13 +175,15 @@ const Page = () => {
   };
 
   const editItem = async (id, name, quantity, expiration) => {
-    const docRef = doc(firestore, `pantry-items-${sessionId}`, id);
-    await setDoc(docRef, { name, quantity: Number(quantity) || 1, expiration }, { merge: true });
-    await updatePantry();
-    setEditingItem(null);
-    setNewItemName('');
-    setNewItemQuantity('');
-    setNewItemExpiration('');
+    if (userUid) {
+      const docRef = doc(firestore, `pantry-items-${userUid}`, id);
+      await setDoc(docRef, { name, quantity: Number(quantity) || 1, expiration }, { merge: true });
+      await updatePantry();
+      setEditingItem(null);
+      setNewItemName('');
+      setNewItemQuantity('');
+      setNewItemExpiration('');
+    }
   };
 
   const handleSignOut = async () => {
