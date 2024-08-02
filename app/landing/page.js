@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { Box, Button, Container, Typography, AppBar, Toolbar, CssBaseline } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { GitHub, LinkedIn, Public } from '@mui/icons-material';
 
 const theme = createTheme({
   palette: {
@@ -62,6 +63,24 @@ const LandingPage = () => {
           <Button variant="contained" color="secondary" onClick={handleSignIn} sx={{ mt: 4 }}>
             Sign In
           </Button>
+        </Box>
+        <Box
+          display="flex"
+          flexDirection="row"
+          justifyContent="center"
+          alignItems="center"
+          mt={2}
+          mb={2}
+        >
+          <a href="https://syedtaha.org" target="_blank" rel="noopener noreferrer" style={{ color: theme.palette.secondary.main, textDecoration: 'none', margin: '0 1rem' }}>
+            <Public />
+          </a>
+          <a href="https://github.com/syedtaha22" target="_blank" rel="noopener noreferrer" style={{ color: theme.palette.secondary.main, textDecoration: 'none', margin: '0 1rem' }}>
+            <GitHub />
+          </a>
+          <a href="https://www.linkedin.com/in/syetaha/" target="_blank" rel="noopener noreferrer" style={{ color: theme.palette.secondary.main, textDecoration: 'none', margin: '0 1rem' }}>
+            <LinkedIn />
+          </a>
         </Box>
       </Container>
     </ThemeProvider>
