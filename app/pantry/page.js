@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Typography, Box, Button, Card, CardHeader, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, TextField, createTheme, ThemeProvider, Menu, MenuItem } from '@mui/material';
+import { Container, Typography, Box, Button, Card, CardHeader, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, TextField, createTheme, ThemeProvider, Menu, MenuItem, CircularProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { AddShoppingCart, Edit, Delete, Logout, AccountCircle } from '@mui/icons-material'; // Import AccountCircle
+import { AddShoppingCart, Edit, Delete, Logout, AccountCircle } from '@mui/icons-material';
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { firestore, auth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { Analytics } from "@vercel/analytics/react";
 import withAuth from '../protectedRoute';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Define custom theme
 const theme = createTheme({
@@ -108,6 +110,8 @@ const Page = () => {
   const [anchorEl, setAnchorEl] = useState(null); // For dropdown menu
   const [userEmail, setUserEmail] = useState(''); // State to hold user email
   const [userUid, setUserUid] = useState(''); // State to hold user UID
+  const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState('');
   const router = useRouter(); // Initialize router
 
   useEffect(() => {
@@ -124,8 +128,6 @@ const Page = () => {
 
     return () => unsubscribe(); // Cleanup subscription on unmount
   }, []);
-
-
 
   const updatePantry = async () => {
     if (userUid) {
@@ -199,6 +201,30 @@ const Page = () => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const getInventoryItems = async () => {
+    const snapshot = collection(firestore, `pantry-items-${userUid}`);
+    const docs = await getDocs(snapshot);
+    const inventoryList = docs.docs.map(doc => doc.data().name);
+    return inventoryList;
+  };
+
+  const handleGetRecipes = async () => {
+    setLoading(true);
+    const inventory = await getInventoryItems();
+  
+    const response = await fetch('/api/recipe-suggestions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ items: inventory }), // Changed from inventory to items
+    });
+  
+    const data = await response.json();
+    setSuggestions(data.recipe); // Adjusted based on the previous response structure
+    setLoading(false);
   };
 
   return (
@@ -318,6 +344,27 @@ const Page = () => {
             </CardContent>
           </Card>
         </Box>
+
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleGetRecipes}
+          sx={{ marginTop: 4 }}
+          disabled={loading}
+        >
+          {loading ? <CircularProgress size={24} /> : 'Get Recipe Suggestions'}
+        </Button>
+
+        {suggestions && (
+          <Card sx={{ marginTop: 4, paddingLeft: 2 }}>
+            {/* <CardHeader title="Recipe Suggestions" /> */}
+            <CardContent>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {suggestions}
+              </ReactMarkdown>
+            </CardContent>
+          </Card>
+        )}
       </Container>
 
       <Footer>
