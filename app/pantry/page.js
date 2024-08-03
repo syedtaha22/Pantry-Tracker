@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Typography, Box, Button, Card, CardHeader, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, TextField, createTheme, ThemeProvider, Menu, MenuItem, CircularProgress } from '@mui/material';
+import {
+  Container, Typography, Box, Button, Card, CardHeader, CardContent,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  IconButton, TextField, createTheme, ThemeProvider, Menu, MenuItem, CircularProgress
+} from '@mui/material';
+
 import { styled } from '@mui/material/styles';
 import { AddShoppingCart, Edit, Delete, Logout, AccountCircle, Search } from '@mui/icons-material';
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore';
@@ -220,11 +225,11 @@ const Page = () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ items: inventory }), // Changed from inventory to items
+      body: JSON.stringify({ items: inventory }),
     });
 
     const data = await response.json();
-    setSuggestions(data.recipe); // Adjusted based on the previous response structure
+    setSuggestions(data.recipe);
     setLoading(false);
   };
 
