@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Container, Typography, Box, Button, Card, CardHeader, CardContent, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, TextField, createTheme, ThemeProvider, Menu, MenuItem, CircularProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { AddShoppingCart, Edit, Delete, Logout, AccountCircle } from '@mui/icons-material';
+import { AddShoppingCart, Edit, Delete, Logout, AccountCircle, Search } from '@mui/icons-material';
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { firestore, auth } from '@/firebase';
@@ -112,6 +112,7 @@ const Page = () => {
   const [userUid, setUserUid] = useState(''); // State to hold user UID
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // State to hold search query
   const router = useRouter(); // Initialize router
 
   useEffect(() => {
@@ -213,7 +214,7 @@ const Page = () => {
   const handleGetRecipes = async () => {
     setLoading(true);
     const inventory = await getInventoryItems();
-  
+
     const response = await fetch('/api/recipe-suggestions', {
       method: 'POST',
       headers: {
@@ -221,11 +222,15 @@ const Page = () => {
       },
       body: JSON.stringify({ items: inventory }), // Changed from inventory to items
     });
-  
+
     const data = await response.json();
     setSuggestions(data.recipe); // Adjusted based on the previous response structure
     setLoading(false);
   };
+
+  const filteredItems = pantryItems.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <ThemeProvider theme={theme}>
@@ -310,8 +315,41 @@ const Page = () => {
           </Card>
 
           <Card sx={{ flex: 2 }}>
-            <CardHeader title="Pantry Items" />
+            <CardHeader sx={{ marginBottom: -2 }} title="Pantry Items" />
             <CardContent>
+              <TextField
+                placeholder="Search items"
+                fullWidth
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{
+
+                  marginBottom: 2,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '20px', // Rounded corners
+                    padding: '2px 8px', // Adjust padding for reduced height
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)', // Subtle shadow
+                    transition: 'box-shadow 0.3s',
+                    '&:hover': {
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.15)', // Enhanced shadow on hover
+                    },
+                    '&.Mui-focused': {
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.15)', // Enhanced shadow on focus
+                    },
+                  },
+                  '& .MuiInputBase-input': {
+                    padding: '6px 8px', // Adjust input padding for better height
+                    fontSize: '0.875rem', // Reduce font size for better balance
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <Search sx={{ color: 'action.active', marginRight: '8px', fontSize: '1.2rem' }} />
+                  ),
+                }}
+              />
+
+
               <TableContainer sx={{ maxHeight: 350, overflowY: 'auto' }}>
                 <Table stickyHeader>
                   <TableHead>
@@ -323,7 +361,7 @@ const Page = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {pantryItems.map((item) => (
+                    {filteredItems.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell>{item.name}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
